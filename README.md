@@ -164,15 +164,6 @@ The edit is applied to the specification, not the rendered image, and the diagra
 
 ---
 
-## Known Limitations
-
-- Local import resolution during ingestion currently extends one level deep from each entry point. Deeper dependency chains are not automatically included.
-- The character budget enforced on repository content is applied as a simple truncation and does not currently prioritize entry-point content over referenced-file content when a repository exceeds the budget.
-- JavaScript/TypeScript import resolution supports relative imports only; path-aliased imports (e.g. `@/utils/foo`, defined via `tsconfig.json`) are not yet resolved.
-- Diagram layout is delegated entirely to Mermaid's automatic layout engine. Diagrams with many long-distance edges can exhibit crossing lines that a hand-drawn diagram would avoid.
-
----
-
 ## Technology Stack
 
 - **Language model orchestration:** LangChain, with structured output validated via Pydantic
@@ -185,4 +176,4 @@ The edit is applied to the specification, not the rendered image, and the diagra
 
 ## License
 
-*Add license information here.*
+MIT
