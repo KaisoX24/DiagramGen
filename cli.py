@@ -1,12 +1,14 @@
 import typer
 from pathlib import Path
 
-from setup_check import ensure_render_environment
-from ingestion.parser import ingest_repo
-from ingestion.source import resolve_repo_source
-from reasoning.llm import generate_diagram_spec,edit_diagram_spec,DiagramSpec
-from rendering.compiler import compile_diagram_spec
-from rendering.renderer import render_diagram
+from diagramgen.env_check.setup_check import ensure_render_environment
+from diagramgen.env_check.api_key import reset_api_key,ensure_api_key,_save_key
+from diagramgen.ingestion.parser import ingest_repo
+from diagramgen.ingestion.source import resolve_repo_source
+from diagramgen.models.data_models import DiagramSpec
+from diagramgen.reasoning.llm import generate_diagram_spec,edit_diagram_spec
+from diagramgen.rendering.compiler import compile_diagram_spec
+from diagramgen.rendering.renderer import render_diagram
 
 app=typer.Typer(help="Generate and edit Github project architecture workflow diagrams.")
 
@@ -18,6 +20,7 @@ def generate(
     "Analyze a repo and generate an architecture diagram."
     try:
         ensure_render_environment()
+        ensure_api_key()
         repo_path=resolve_repo_source(source)
         repo_content=ingest_repo(repo_path)
         spec=generate_diagram_spec(repo_content)
@@ -71,6 +74,23 @@ def edit(
     except (ValueError, RuntimeError) as e:
         typer.echo(f"Error: {e}")
         raise typer.Exit(1)
+
+@app.command()
+def configure(
+    reset: bool = typer.Option(False, "--reset", help="Remove the saved API key"),
+):
+    "View or update the saved OpenAI API key."
+    if reset:
+        reset_api_key()
+        return
+
+    key = input("Paste your OpenAI API key: ").strip()
+    if not key:
+        typer.secho("No key entered. Nothing changed.", fg=typer.colors.BRIGHT_RED)
+        raise typer.Exit(1)
+
+    _save_key(key)
+
 
 if __name__=="__main__":
     app()
