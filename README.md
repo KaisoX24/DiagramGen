@@ -251,7 +251,9 @@ The configuration command allows API credentials to be stored for supported prov
 
 ---
 ## Author
+
 Pramit Acharjya
+
 ---
 
 ## License
