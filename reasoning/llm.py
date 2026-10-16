@@ -1,48 +1,33 @@
 from pathlib import Path
-from diagramgen.models.data_models import DiagramSpec
-from langchain.chat_models import init_chat_model
+from models.data_models import DiagramSpec
 from langchain.messages import HumanMessage, SystemMessage
-from dotenv import load_dotenv
-
-
-load_dotenv()
+from reasoning.providers import get_llm
+from functools import lru_cache
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SYS_MSG_DIR = PROJECT_ROOT / "sys_msg"
 
 
-_structured_llm = None
-_sys_msg = None
-_edit_msg = None
-
-
-def _get_structured_llm():
+@lru_cache
+def _get_structured_llm(provider:str,model:str):
     "Creates the LLM client on first use only, and caches it for reuse"
-    global _structured_llm
-    if _structured_llm is None:
-        llm = init_chat_model(model="google_genai:gemini-3.8-flash",temperature=0.66)
-        _structured_llm = llm.with_structured_output(DiagramSpec)
-    return _structured_llm
+    llm=get_llm(provider,model)
+    return llm.with_structured_output(DiagramSpec)
+    
 
-
+@lru_cache
 def _get_sys_msg() -> str:
-    global _sys_msg
-    if _sys_msg is None:
-        _sys_msg = (SYS_MSG_DIR / "sys_msg.txt").read_text(encoding="utf-8")
-    return _sys_msg
+    return (SYS_MSG_DIR / "sys_msg.txt").read_text(encoding="utf-8")
 
-
+@lru_cache
 def _get_edit_msg() -> str:
-    global _edit_msg
-    if _edit_msg is None:
-        _edit_msg = (SYS_MSG_DIR / "edit_msg.txt").read_text(encoding="utf-8")
-    return _edit_msg
+    return (SYS_MSG_DIR / "edit_msg.txt").read_text(encoding="utf-8")
 
 
-def generate_diagram_spec(repo_content: str) -> DiagramSpec | None:
+def generate_diagram_spec(provider:str,model:str,repo_content: str) -> DiagramSpec | None:
     "Takes the repo content, directory tree, etc. and returns the validated DiagramSpec"
     try:
-        structured_llm = _get_structured_llm()
+        structured_llm = _get_structured_llm(provider=provider,model=model)
         messages = [
             SystemMessage(content=_get_sys_msg()),
             HumanMessage(content=repo_content),
@@ -53,11 +38,11 @@ def generate_diagram_spec(repo_content: str) -> DiagramSpec | None:
         return None
 
 
-def edit_diagram_spec(current_spec: DiagramSpec, edit_request: str) -> DiagramSpec | None:
+def edit_diagram_spec(provider:str,model:str,current_spec: DiagramSpec, edit_request: str) -> DiagramSpec | None:
     """Edit loop call. Takes the existing spec plus the user's plain-language
     change request, and returns an updated, validated DiagramSpec."""
     try:
-        structured_llm = _get_structured_llm()
+        structured_llm = _get_structured_llm(provider=provider,model=model)
         current_spec_json = current_spec.model_dump_json(indent=2)
         user_message = (
             f"Current Diagram Spec:\n{current_spec_json}\n\n"
