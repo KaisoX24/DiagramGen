@@ -250,6 +250,9 @@ The configuration command allows API credentials to be stored for supported prov
 - **Configuration:** environment-based provider API key configuration
 
 ---
+## Author
+Pramit Acharjya
+---
 
 ## License
 
